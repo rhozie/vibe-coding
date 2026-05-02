@@ -39,43 +39,48 @@ export const usersRoutes = new Elysia({ prefix: '/api' })
       password: t.String()
     })
   })
-  .get('/users/current', async ({ headers, set }) => {
-    try {
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
+  .group('/users', (app) =>
+    app
+      .derive(({ headers }) => {
+        const authHeader = headers.authorization;
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
-      const token = authHeader.split(' ')[1];
-      const user = await getCurrentUser(token);
-      return { data: user };
-    } catch (error) {
-      if (error.message === 'Unauthorized') {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-      set.status = 500;
-      return { error: 'Internal Server Error' };
-    }
-  })
-  .delete('/users/logout', async ({ headers, set }) => {
-    try {
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
+        return { token };
+      })
+      .get('/current', async ({ token, set }) => {
+        try {
+          if (!token) {
+            set.status = 401;
+            return { error: 'Unauthorized' };
+          }
 
-      const token = authHeader.split(' ')[1];
-      await logoutUser(token);
-      return { data: 'OK' };
-    } catch (error) {
-      if (error.message === 'Unauthorized') {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-      set.status = 500;
-      return { error: 'Internal Server Error' };
-    }
-  });
+          const user = await getCurrentUser(token);
+          return { data: user };
+        } catch (error) {
+          if (error.message === 'Unauthorized') {
+            set.status = 401;
+            return { error: 'Unauthorized' };
+          }
+          set.status = 500;
+          return { error: 'Internal Server Error' };
+        }
+      })
+      .delete('/logout', async ({ token, set }) => {
+        try {
+          if (!token) {
+            set.status = 401;
+            return { error: 'Unauthorized' };
+          }
+
+          await logoutUser(token);
+          return { data: 'OK' };
+        } catch (error) {
+          if (error.message === 'Unauthorized') {
+            set.status = 401;
+            return { error: 'Unauthorized' };
+          }
+          set.status = 500;
+          return { error: 'Internal Server Error' };
+        }
+      })
+  );
