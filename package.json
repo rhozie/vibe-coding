@@ -11,8 +11,9 @@
     "db:studio": "bunx drizzle-kit studio"
   },
   "dependencies": {
-    "drizzle-orm": "latest",
+    "bcryptjs": "^3.0.3",
     "dotenv": "latest",
+    "drizzle-orm": "latest",
     "elysia": "latest",
     "mysql2": "latest"
   },
